@@ -5,6 +5,7 @@ import sys
 import spotipy
 import spotipy.util as util
 from spotipy.oauth2 import SpotifyClientCredentials
+import json
 
 def main():
     file = import_info('Account.txt')
@@ -27,11 +28,19 @@ def main():
     print('----------------------------------------')
     print()
     print('Welcome to Spotify Tracker')
-    discover_tracks = access_playlist(file, sp)
+    # discover_tracks = access_playlist(file, 'New', sp)
+    discover_tracks = access_playlist(file, 'Discover Weekly', sp)
     if not discover_tracks:
         print('Discover Weekly: Not Found')
         sys.exit()
+    # print(json.dumps(discover_tracks, indent=4))
     print_playlist(discover_tracks)
+    disc = access_playlist(file, 'Discover', sp)
+    if not disc:
+        print('Discover: Not Found')
+        sys.exit()
+    # print(json.dumps(disc, indent=4))
+    print_playlist(disc)
 
 
 def import_info(text_file):
@@ -44,26 +53,30 @@ def import_info(text_file):
 def create_token(file, scope):
     # Create Token to be able to access Spotify API & Sign into Spotify
     # Authorization Code Flow
-    print('Reminder, your password is: ' + file[3])
+    print('Reminder, your password is: ' + "*" * (len(file[3]) - 4) + file[3][-4:])  # Only prints last 4 digits
 
     token = util.prompt_for_user_token(file[1], scope, file[5], file[7], file[9])
     return token
 
 
-def access_playlist(file, sp):
+def access_playlist(file, name, sp):
     # Access my Discover Weekly
     playlists = sp.user_playlists(file[1])
     for playlist in playlists['items']:
-        if playlist['name'] == 'Discover Weekly':
+        if playlist['name'] == name:
             print(playlist['name'] + ': Found')
             discover = sp.user_playlist(file[1], playlist['id'], fields="tracks,next")
-            discover_tracks = discover['tracks']
-            return discover_tracks
+            discover = discover['tracks']
+            nextsong = discover
+            discover = discover['items']
+            while nextsong['next']:
+                nextsong.update(sp.next(nextsong))
+                discover.extend(nextsong['items'])
+            return discover
 
 def print_playlist(playlist):
-    for i, item in enumerate(playlist['items']):
-        track = item['track']
-        print("\t %d %32.32s %s" % (i + 1, track['artists'][0]['name'], track['name']))
+    for i, item in enumerate(playlist):
+        print("\t %d %32.32s : %s" % (i + 1, playlist[i]['track']['artists'][0]['name'], playlist[i]['track']['name']))
 
 
 main()
