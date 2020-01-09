@@ -64,6 +64,7 @@ def access_playlist(file, name, sp):
     playlists = sp.user_playlists(file[1])
     for playlist in playlists['items']:
         if playlist['name'] == name:
+            print()
             print(playlist['name'] + ': Found')
             discover = sp.user_playlist(file[1], playlist['id'], fields="tracks,next")
             discover = discover['tracks']
@@ -75,8 +76,9 @@ def access_playlist(file, name, sp):
             return discover
 
 def print_playlist(playlist):
+    print("\t   %40.40s | %s" % ("Artist", "Song"))
     for i, item in enumerate(playlist):
-        print("\t %d %32.32s : %s" % (i + 1, playlist[i]['track']['artists'][0]['name'], playlist[i]['track']['name']))
+        print("\t %d %40.40s : %s" % (i + 1, playlist[i]['track']['artists'][0]['name'], playlist[i]['track']['name']))
 
 
 main()
